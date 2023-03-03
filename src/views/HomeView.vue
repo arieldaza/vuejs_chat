@@ -4,7 +4,7 @@ import InputSearch from '@/components/InputSearch.vue'
 import ProfileCard from '@/components/ProfileCard.vue'
 import ChatItem from '@/components/ChatItem.vue'
 
-import state from '@/store/store.js';
+import { mapState, mapGetters } from 'vuex';
 
 export default {
   components: {
@@ -16,11 +16,9 @@ export default {
   },
   data() {
     return {
-      state,
       search: '',
       profile: {
         username: 'Diana Nerd',
-        status: 'active',
         avatar: '/avatars/avatar.jpg'
       },
       channels: [
@@ -33,7 +31,14 @@ export default {
       ]
     }
   },
-
+  /*computed: mapState({
+    username: (state) => state.username
+  })*/
+  computed:{
+    ...mapState(['status']),
+    ...mapGetters('profile', ['firstName']),
+    ...mapGetters('channels', ['getChannels'])
+  }
 }
 </script>
 
@@ -43,13 +48,13 @@ export default {
     <InputSearch v-model="search" />
     <ProfileCard
       :avatar="profile.avatar"
-      :username="state.username"
-      :status="profile.status"
+      :username="firstName('')"
+      :status="status"
     />
     <RouterLink to="/" class="channels-title">Canales <Icon icon="carbon:hashtag" /></RouterLink>
     <div class="channels">
       <ChatItem
-        v-for="channel in channels"
+        v-for="channel in getChannels(search)"
         :key="channel.id"
         :id="channel.id"
         :name="channel.name"

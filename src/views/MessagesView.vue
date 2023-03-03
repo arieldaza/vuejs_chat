@@ -1,5 +1,6 @@
 <script>
 import MessageItem from '@/components/MessageItem.vue'
+import { mapGetters, mapActions } from 'vuex'
 
 export default {
   components: {
@@ -7,13 +8,14 @@ export default {
   },
   data() {
     return {
+      channelId: null,
       title: 'Nombre del canal',
       people: [
-        { id: 1, name: 'Tú', avatar: '/avatars/avatar.jpg' },
+        /*{ id: 1, name: 'Tú', avatar: '/avatars/avatar.jpg' },
         { id: 2, name: 'Jason', avatar: '/avatars/avatar-02.jpg' },
-        { id: 3, name: 'Janet', avatar: '/avatars/avatar-03.jpg' }
+        { id: 3, name: 'Janet', avatar: '/avatars/avatar-03.jpg' }*/
       ],
-      messages: [
+      /*messages: [
         { id: 1, author: 1, message: 'Hola 👀', timestamp: new Date().toLocaleTimeString() },
         { id: 2, author: 2, message: 'Holaaa!!!', timestamp: new Date().toLocaleTimeString() },
         { id: 3, author: 3, message: 'Hola a todo el mundo 😊', timestamp: new Date().toLocaleTimeString() },
@@ -25,13 +27,33 @@ export default {
         { id: 9, author: 2, message: 'Ahhhh!!', timestamp: new Date().toLocaleTimeString() },
         { id: 10, author: 2, message: '¡Cuenta ese chismesito yaaaa!', timestamp: new Date().toLocaleTimeString() },
         { id: 11, author: 1, message: 'Pues, ¡acabamos de lanzar los nuevos cursos de Vue.js!', timestamp: new Date().toLocaleTimeString() },        
-      ]
+      ]*/
+      newMessage: null
     }
   },
   computed: {
+    ...mapGetters('channels',['getChannelById']),
+    ...mapGetters('messages',['getMessages']),
+    ...mapGetters('messages',['getContactsFromMessages']),
+    ...mapGetters('contacts',['getContactById']),
     messagesView() {
-      return this.messages.map((message) => {
-        const author = this.people.find((p) => p.id === message.author)
+      const channel = this.getChannelById(this.channelId);
+      if(channel)
+      {
+        this.title = channel.name;
+        //this.people = this.getContactsFromMessages;
+      } 
+      
+      this.people = [];
+
+      return this.getMessages(this.channelId)?.map((message) => {
+        const author = this.getContactById(message.author);
+        console.log(author);
+        console.log(this.people);
+        if(this.people.findIndex(object => object.id === author.id) === -1){
+          this.people.push(author); 
+        }
+        
         if (!author) return message;
         return {
           ...message,
@@ -44,7 +66,8 @@ export default {
   watch: {
     '$route.params.id': {
       immediate: true,
-      handler() {
+      handler(id) {
+        this.channelId = id;
         this.scrollToBottom()
       }
     }
@@ -57,8 +80,15 @@ export default {
       this.$refs?.end?.scrollIntoView({
           behavior: 'smooth'
       })
+    },
+    ...mapActions('messages', ['addMessage']),
+    sendMessage () {
+      //this.$store.commit("messages/addMessage", );
+      this.addMessage({message: this.newMessage, channelId: this.channelId})
+      this.newMessage = "";
+      this.scrollToBottom();
     }
-  },
+  }
 }
 </script>
 
@@ -89,8 +119,13 @@ export default {
       <span ref="end"></span>
     </div>
     <footer>
-      <textarea rows="3"></textarea>
-      <button>
+      <textarea 
+      rows="3"
+      v-model="newMessage"
+      @keyup.enter="sendMessage"
+      ></textarea>
+      <button
+      @click="sendMessage">
         <Icon icon="carbon:send-alt" />
       </button>
     </footer>
